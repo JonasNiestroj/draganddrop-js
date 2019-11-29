@@ -4,6 +4,8 @@
   (global = global || self, global.Draganddrop = factory());
 }(this, (function () { 'use strict';
 
+  let actuallyDragging = "";
+
   function create(element, options) {
     if (!element) {
       throw new Error("Element should not be null or undefined");
@@ -62,12 +64,14 @@
                 break;
             }
 
-            event.dataTransfer.setDragImage(
-              dragStartEvent.dragLayout,
-              offsetX,
-              offsetY
-            );
+            event.dataTransfer.setDragImage(dragStartEvent.dragLayout, offsetX, offsetY);
           }
+
+          const clone = child.cloneNode(true);
+          clone.id = "n49ndf09n";
+
+          event.dataTransfer.setData("text", clone.outerHTML);
+          actuallyDragging = clone.outerHTML;
         });
       }
 
@@ -87,12 +91,24 @@
       child.addEventListener("dragover", event => {
         event.preventDefault();
         event.stopPropagation();
+        //console.log("DRAGOVER", event);
+      });
+
+      child.addEventListener("dragenter", event => {
+        const element = document.getElementById("n49ndf09n");
+        if (element != null) {
+          element.remove();
+        }
+        event.target.insertAdjacentHTML("beforebegin", actuallyDragging);
       });
 
       child.addEventListener("drop", event => {
         if (options.onDrop && isFunction(options.onDrop)) {
           options.onDrop(event);
         }
+        actuallyDragging = "";
+        var data = event.dataTransfer.getData("text");
+        event.target.insertAdjacentHTML("beforebegin", data);
       });
     }
   }
@@ -113,9 +129,7 @@
   }
 
   function isFunction(functionToCheck) {
-    return (
-      functionToCheck && {}.toString.call(functionToCheck) === "[object Function]"
-    );
+    return functionToCheck && {}.toString.call(functionToCheck) === "[object Function]";
   }
 
   var index = {

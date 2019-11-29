@@ -1,4 +1,5 @@
 const dragAndDropList = [];
+let actuallyDragging = "";
 
 function create(element, options) {
   if (!element) {
@@ -58,12 +59,14 @@ function create(element, options) {
               break;
           }
 
-          event.dataTransfer.setDragImage(
-            dragStartEvent.dragLayout,
-            offsetX,
-            offsetY
-          );
+          event.dataTransfer.setDragImage(dragStartEvent.dragLayout, offsetX, offsetY);
         }
+
+        const clone = child.cloneNode(true);
+        clone.id = "n49ndf09n";
+
+        event.dataTransfer.setData("text", clone.outerHTML);
+        actuallyDragging = clone.outerHTML;
       });
     }
 
@@ -83,12 +86,30 @@ function create(element, options) {
     child.addEventListener("dragover", event => {
       event.preventDefault();
       event.stopPropagation();
+      //console.log("DRAGOVER", event);
+    });
+
+    child.addEventListener("dragenter", event => {
+      let dropGhost = "";
+      if (options.onDragEnter && isFunction(options.onDragEnter)) {
+        const dragEnterEvent = new DragEnterEvent(event);
+        options.onDragEnter(dragEnterEvent);
+        dropGhost = dragEnterEvent.dropGhost;
+      }
+      const element = document.getElementById("n49ndf09n");
+      if (element != null) {
+        element.remove();
+      }
+      event.target.insertAdjacentHTML("beforebegin", dropGhost);
     });
 
     child.addEventListener("drop", event => {
       if (options.onDrop && isFunction(options.onDrop)) {
         options.onDrop(event);
       }
+      actuallyDragging = "";
+      var data = event.dataTransfer.getData("text");
+      event.target.insertAdjacentHTML("beforebegin", data);
     });
   }
   dragAndDropList.push({
@@ -111,10 +132,15 @@ class DragEndEvent {
   }
 }
 
+class DragEnterEvent {
+  constructor(event) {
+    this.nativeEvent = event;
+    this.dropGhost = actuallyDragging;
+  }
+}
+
 function isFunction(functionToCheck) {
-  return (
-    functionToCheck && {}.toString.call(functionToCheck) === "[object Function]"
-  );
+  return functionToCheck && {}.toString.call(functionToCheck) === "[object Function]";
 }
 
 export default {
